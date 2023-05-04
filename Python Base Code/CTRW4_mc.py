@@ -107,6 +107,57 @@ def ctrw4_De_Ds_mc(samples_per_rep,repeats, initial_pos, D_sites,D_ends, diff_ti
        #                                     'Misrepair Rate Std']) 
     
     #return repair_df_De_Ds
+    
+def ctrw4_oneDe_Ds_mc(samples_per_rep, repeats, initial_pos, D_sites, one_D_ends, diff_time, 
+                      run_time, min_wait_time, anom_diff_exp, int_length, delay_time,
+                      interaction_p):
+    
+    filename = 'De_{:.1e}_Ds_{:.1e}_{:.1e}_del_{}_p_{}_rep{}.csv'.format(one_D_ends, D_sites[0], D_sites[-1], delay_time,
+                                                                         interaction_p, repeats)
+    
+    nrows = len(D_sites)
+    print(nrows)
+    columns=['D_ends','D_sites','Repair Rate',
+             'Repair Rate Std','Misrepair Rate',
+             'Misrepair Rate Std']
+
+    with open(filename,'w',newline='') as file:
+        write = csv.writer(file)
+        write.writerow(columns)
+    
+        
+    print('----------------')
+
+    repair_avgs = np.empty(len(D_sites))
+    repair_stds = np.empty(len(D_sites))
+
+    for k,Ds in enumerate(D_sites):
+
+        #print(j*len(D_sites)+k)
+        print('{}   De {:.1e}   Ds {:.1e}'.format(k, one_D_ends, Ds))
+
+        repair_rates = np.zeros(repeats)
+        misrepair_rates = np.zeros(repeats)
+        for i in np.arange(repeats):
+            data = ctrw4_interaction_mc(samples_per_rep, initial_pos, Ds, one_D_ends, 
+                                        diff_time, run_time, min_wait_time, anom_diff_exp,
+                                        int_length, delay_time, interaction_p)
+
+            repair_events = len(data[data['repair']==1.0])
+            misrepair_events = len(data[data['repair']==-1.0])
+            repair_rates[i] = repair_events
+            misrepair_rates[i] = misrepair_events
+
+        repair_avg = np.nanmean(repair_rates)
+        misrepair_avg = np.nanmean(misrepair_rates)
+        repair_std = np.nanstd(repair_rates)
+        misrepair_std = np.nanstd(misrepair_rates)
+
+        repair_data_row = np.array([one_D_ends,Ds,repair_avg,repair_std,misrepair_avg,misrepair_std])
+
+        with open(filename,'a',newline='') as file:
+            write = csv.writer(file)
+            write.writerow(repair_data_row)
 
 
     # MC function to vary the delay time and the Diffusion Coefficient of break sites
