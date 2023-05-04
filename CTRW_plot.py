@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib.ticker import FormatStrFormatter
 
 ################################################################################
 ################################################################################
@@ -200,24 +201,34 @@ def heatmap_repair_misrepair_subplots(repair_misrepair_df,N_de,N_ds,misrep_multi
     arr_repair = np.array(repair_misrepair_df['Repair Rate'].values)
     arr_repair = np.reshape(arr_repair,(N_de,N_ds))
 
-    print(arr_repair)
-
     arr_misrepair = np.array(repair_misrepair_df['Misrepair Rate'].values)
     arr_misrepair = np.reshape(arr_misrepair,(N_de,N_ds))
 
+    arr_repair = np.flip(arr_repair,axis=0)
+    arr_misrepair = np.flip(arr_misrepair,axis=0)
+
     repair_misrepair_arr = np.array([arr_repair,arr_misrepair*misrep_multiplier])
+
+    De_vals = np.unique((repair_misrepair_df['D_ends'].to_numpy()))
+    Ds_vals = np.unique((repair_misrepair_df['D_sites'].to_numpy()))
 
     titles = np.array(['Repair Rate','Misrepair Rate X 10'])
     fig, axes = plt.subplots(nrows=1, ncols=2,figsize=(10,8))
+    #plt.ticklabel_format(style='plain')
     fig.suptitle('Heatmaps for Repair and Misrepair Rates, Varying Break Site and Break End Diffusivities')
     for i,ax in enumerate(axes.flat):
         im = ax.imshow(repair_misrepair_arr[i], cmap='hot', vmin=0,vmax=1,
                         extent=extent_list)
         ax.set_title('{}'.format(titles[i]))
         ax.set_xlabel('Break Site Diffusion Coefficient')
+        ax.plot()
         
         if i == 0:
             ax.set_ylabel('Break End Diffusion Coefficient')
+
+        ax.set(xticks=np.linspace(extent_list[0], extent_list[1], N_de), xticklabels=Ds_vals,
+                yticks=np.linspace(extent_list[2], extent_list[3], N_ds), yticklabels=De_vals)
+        #ax.ticklabel_format(style='sci',scilimits=(10,17),axis='both')
 
     fig.colorbar(im, ax=axes.ravel().tolist(),orientation='horizontal',label='Rate')
 
