@@ -85,7 +85,7 @@ def plot_3d_4ctrw_interaction(int_t, int_arr, df1, df2, df3, df4, repair, sim_cl
 #Plot graphs separately on different subplots
 def plot_r_and_D_subplots(repair_df_D_r,reps,r_vals):
     
-    fig,axes = plt.subplots(2,3,figsize=(14,10))
+    fig,axes = plt.subplots(2,3,figsize=(10,8))
     plt.suptitle('Repair Rate vs Diffusivity Coefficient For Varying Initial Separations')
     for i,r in enumerate(r_vals):
 
@@ -102,7 +102,7 @@ def plot_r_and_D_subplots(repair_df_D_r,reps,r_vals):
 #Plot graphs on single plot 
 def plot_r_and_D(repair_df_D_r,reps,r_vals):
     
-    fig,ax = plt.subplots(figsize=(14,10))
+    fig,ax = plt.subplots(figsize=(10,8))
     plt.suptitle('Repair Rate vs Diffusivity Coefficient For Varying Initial Separations')
     for i,r in enumerate(r_vals):
 
@@ -121,7 +121,7 @@ def plot_r_and_D(repair_df_D_r,reps,r_vals):
 
 def plot_De_and_Ds(repair_df_D_r,reps=1):
     
-    fig,(ax1,ax2) = plt.subplots(1,2,figsize=(14,10))
+    fig,(ax1,ax2) = plt.subplots(1,2,figsize=(10,8))
     plt.suptitle('Repair and Misrepair Rate vs Break Site Diffusivity Coefficient For Varying Break End Diffusivity')
     
     De_vals = np.unique((repair_df_D_r['D_ends'].to_numpy()))
@@ -150,7 +150,7 @@ def plot_De_and_Ds(repair_df_D_r,reps=1):
 
 def plot_De_and_Ds_subplots(repair_df_De_Ds,plot_dim_1=2,plot_dim_2=3,reps=1):
     
-    fig,axes = plt.subplots(plot_dim_1,plot_dim_2,figsize=(16,10))
+    fig,axes = plt.subplots(plot_dim_1,plot_dim_2,figsize=(10,8))
     plt.suptitle('Repair and Misrepair Rate vs Break Site Diffusivity Coefficient For Varying Break End Diffusivities')
     
     De_vals = np.unique((repair_df_De_Ds['D_ends'].to_numpy()))
@@ -177,7 +177,8 @@ def plot_De_and_Ds_subplots(repair_df_De_Ds,plot_dim_1=2,plot_dim_2=3,reps=1):
 
 def heatmap_repair_misrepair_subplots(repair_misrepair_df,N_de,N_ds,misrep_multiplier=1,
                                     extent_list=[2.8e13,28e13,28e13,2.8e13]):
-
+    
+    #extent: [leftmost value,rightmost value, bottom-most value, top-most value]
     arr_repair = np.array(repair_misrepair_df['Repair Rate'].values)
     arr_repair = np.reshape(arr_repair,(N_de,N_ds))
 
@@ -187,7 +188,7 @@ def heatmap_repair_misrepair_subplots(repair_misrepair_df,N_de,N_ds,misrep_multi
     repair_misrepair_arr = np.array([arr_repair,arr_misrepair*misrep_multiplier])
 
     titles = np.array(['Repair Rate','Misrepair Rate X 10'])
-    fig, axes = plt.subplots(nrows=1, ncols=2,figsize=(12,10))
+    fig, axes = plt.subplots(nrows=1, ncols=2,figsize=(10,8))
     fig.suptitle('Heatmaps for Repair and Misrepair Rates, Varying Break Site and Break End Diffusivities')
     for i,ax in enumerate(axes.flat):
         im = ax.imshow(repair_misrepair_arr[i], cmap='hot', vmin=0,vmax=1,

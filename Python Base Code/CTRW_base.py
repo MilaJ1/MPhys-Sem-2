@@ -145,6 +145,7 @@ def ctrw_3d(initial_position, diff_coeff, diff_time, run_time, min_wait_time, an
 
     return df
 
+# 2 CTRW 
 # 3D CTRW with interactions
 def ctrw_3d_interaction(initial_pos, diff_coeff, diff_time, run_time, min_wait_time, anom_diff_exp,
                         int_length, delay_time, interaction_p=1, plot=0, return_trajectories=False):

@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import CTRW_base as CTRW
 import CTRW4 
+import csv
 
 ###########################################################
 # Supporting Functions
@@ -50,11 +51,18 @@ def ctrw4_interaction_mc(nsamples, initial_pos, D_sites,D_ends, diff_time, run_t
 # MC function to vary the Diffusion Coefficient of the break ends and break sites
 def ctrw4_De_Ds_mc(samples_per_rep,repeats, initial_pos, D_sites,D_ends, diff_time, 
                    run_time, min_wait_time, anom_diff_exp,int_length, delay_time,
-                   interaction_p):
+                   interaction_p,filename):
     
     nrows = len(D_sites)*len(D_ends)
-    repair_data_De_Ds = np.zeros((nrows,6))
+    #repair_data_De_Ds = np.zeros((nrows,6))
     print(nrows)
+    columns=['D_ends','D_sites','Repair Rate',
+             'Repair Rate Std','Misrepair Rate',
+             'Misrepair Rate Std']
+
+    with open(filename,'w',newline='') as file:
+        write = csv.writer(file)
+        write.writerow(columns)
     
     for j,De in enumerate(D_ends):
         
@@ -86,11 +94,73 @@ def ctrw4_De_Ds_mc(samples_per_rep,repeats, initial_pos, D_sites,D_ends, diff_ti
             misrepair_std = np.nanstd(misrepair_rates)
             
             repair_data_row = np.array([De,Ds,repair_avg,repair_std,misrepair_avg,misrepair_std])
-            repair_data_De_Ds[j*len(D_sites)+k] = repair_data_row
+
+            with open(filename,'a',newline='') as file:
+                write = csv.writer(file)
+                write.writerow(repair_data_row)
             
-    repair_df_De_Ds = pd.DataFrame(data=repair_data_De_Ds, 
-                                   columns=['D_ends','D_sites','Repair Rate',
-                                            'Repair Rate Std','Misrepair Rate',
-                                            'Misrepair Rate Std']) 
+            #repair_data_De_Ds[j*len(D_sites)+k] = repair_data_row
+            
+    #repair_df_De_Ds = pd.DataFrame(data=repair_data_De_Ds, 
+     #                              columns=['D_ends','D_sites','Repair Rate',
+      #                                      'Repair Rate Std','Misrepair Rate',
+       #                                     'Misrepair Rate Std']) 
     
-    return repair_df_De_Ds
+    #return repair_df_De_Ds
+
+
+    # MC function to vary the delay time and the Diffusion Coefficient of break sites
+def ctrw4_delay_t_Ds_mc(samples_per_rep,repeats, initial_pos,delay_times, D_sites, diff_time, 
+                   run_time, min_wait_time, anom_diff_exp,int_length,filename,D_end=2.8e11,interaction_p=1):
+    
+    nrows = len(D_sites)*len(delay_times)
+    #repair_data_delay_t_Ds = np.zeros((nrows,6))
+    print(nrows)
+    columns=['Delay Time','D_sites','Repair Rate',
+            'Repair Rate Std','Misrepair Rate',
+            'Misrepair Rate Std']
+    
+    with open(filename,'w',newline='') as file:
+        write = csv.writer(file)
+        write.writerow(columns) 
+    
+    for j,delay_t in enumerate(delay_times):
+        
+        print('----------------')
+    
+        for k,Ds in enumerate(D_sites):
+
+            print(j*len(D_sites)+k)
+            print(delay_t,Ds)
+
+            repair_rates = np.zeros(repeats)
+            misrepair_rates = np.zeros(repeats)
+            for i in np.arange(repeats):
+                data = ctrw4_interaction_mc(samples_per_rep, initial_pos, Ds,D_end, 
+                                            diff_time, run_time, min_wait_time, anom_diff_exp,
+                                            int_length, delay_t, interaction_p=interaction_p)
+                
+                repair_events = len(data[data['repair']==1.0])
+                misrepair_events = len(data[data['repair']==-1.0])
+                repair_rates[i] = repair_events
+                misrepair_rates[i] = misrepair_events
+
+            repair_avg = np.nanmean(repair_rates)
+            misrepair_avg = np.nanmean(misrepair_rates)
+            repair_std = np.nanstd(repair_rates)
+            misrepair_std = np.nanstd(misrepair_rates)
+            
+            repair_data_row = np.array([delay_t,Ds,repair_avg,repair_std,misrepair_avg,misrepair_std])
+
+            with open(filename,'a',newline='') as file:
+                write = csv.writer(file)
+                write.writerow(repair_data_row)
+            #repair_data_delay_t_Ds[j*len(D_sites)+k] = repair_data_row
+            
+    #repair_df_delay_t_Ds = pd.DataFrame(data=repair_data_delay_t_Ds, 
+     #                              columns=['Delay Time','D_sites','Repair Rate',
+      #                                      'Repair Rate Std','Misrepair Rate',
+       #                                     'Misrepair Rate Std']) 
+    
+    #return repair_df_delay_t_Ds
+

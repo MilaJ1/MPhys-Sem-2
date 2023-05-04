@@ -105,3 +105,47 @@ def ctrw_interaction_mc_D_r(nsamples_per_D, repeats, separations, diff_coeffs, d
     repair_df_D_r = pd.DataFrame(data=repair_data_D_r, columns=['r','D','Repair Rate','Repair Rate Std'])                 
         
     return repair_df_D_r
+
+def ctrw2_mc_D_delay_t(nsamples_per_D, repeats, delay_times, diff_coeffs, diff_time, run_time, min_wait_time, anom_diff_exp,
+                           int_length, separation=0, interaction_p=1, plot=0,print_out=0):
+    
+    
+    N_rows = int(len(diff_coeffs)*len(delay_times))    
+    repair_data_D_delay_t = np.empty((N_rows,4)) 
+    print(N_rows)
+
+    for j,delay_t in enumerate(delay_times):
+
+        if print_out ==1:
+            print("-----------------------")
+            print(delay_t)
+            print("-----------------------")
+                
+        initial_pos = [(0,0,0),(0,0,separation)]  
+    
+        for k,D in enumerate(diff_coeffs):
+            
+            if print_out ==1:
+                print(j*len(diff_coeffs)+k)
+                print(delay_t,D)
+
+            temp_repair_rates = np.empty(repeats)
+
+            for i in np.arange(repeats):
+                data = ctrw_3d_interaction_mc(nsamples_per_D, initial_pos, D, diff_time, run_time, min_wait_time, anom_diff_exp,
+                                              int_length, delay_t, interaction_p=interaction_p, plot=plot)
+                
+                if len(data.index) == 0:
+                    temp_repair_rates[i] = 0
+                else:  
+                    repair_events = len(data[data['repair']==1.0])
+                    temp_repair_rates[i] = repair_events
+
+            repair_avg = np.nanmean(temp_repair_rates)
+            repair_std = np.nanstd(temp_repair_rates)
+            repair_data_row = np.array([delay_t,D,repair_avg,repair_std])
+            repair_data_D_delay_t[j*len(diff_coeffs)+k] = repair_data_row
+
+    repair_df_D_delay_t = pd.DataFrame(data=repair_data_D_delay_t, columns=['Delay Time','D','Repair Rate','Repair Rate Std'])                 
+        
+    return repair_df_D_delay_t
