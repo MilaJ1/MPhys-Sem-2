@@ -27,52 +27,53 @@ def print_full(df):
 
 #Basic CTRW4 mc function, collects relevant data for runs of CTRW4 simulation
 def ctrw4_interaction_mc(nsamples, initial_pos, D_sites,D_ends, diff_time, run_time, min_wait_time, anom_diff_exp,
-                           int_length, delay_time, interaction_p=1, plot=False):
+                         int_length, delay_time, interaction_p):
     
-    mc_repair_arr = np.zeros((nsamples,11))
+    mc_repair_arr = np.zeros((nsamples,12))
     
     for i in np.arange(nsamples):
 
-        rep_t, rep_arr = CTRW4.coupled_ctrw_for_mc(initial_pos, D_sites, D_ends, diff_time, run_time, min_wait_time, anom_diff_exp,
-                                                  int_length, delay_time, plot=False)
+        rep_t, rep_arr, int_count = CTRW4.coupled_ctrw_for_mc(initial_pos, D_sites, D_ends, diff_time, run_time, min_wait_time,
+                                                              anom_diff_exp, int_length, delay_time, interaction_p)
     
         mc_repair_arr[i][0] = i
         mc_repair_arr[i][1] = D_sites
         mc_repair_arr[i][2] = D_ends
-        mc_repair_arr[i][3:-1] = rep_arr
+        mc_repair_arr[i][3] = int_count
+        mc_repair_arr[i][4:-1] = rep_arr
         mc_repair_arr[i][-1] = rep_t
         
-    repair_df = pd.DataFrame(data=mc_repair_arr, columns=['mc_step','D_sites','D_ends',
-                                                        'i12','i13','i14','i23','i24','i34','repair','repair_t'])
+    repair_df = pd.DataFrame(data=mc_repair_arr, columns=['mc_step','D_sites','D_ends','int_count',
+                                                          'i12','i13','i14','i23','i24','i34','repair','repair_t'])
     return repair_df
 
 # MC function to vary the Diffusion Coefficient of the break ends and break sites
 def ctrw4_De_Ds_mc(samples_per_rep,repeats, initial_pos, D_sites,D_ends, diff_time, 
                    run_time, min_wait_time, anom_diff_exp,int_length, delay_time,
-                    interaction_p=1, plot=False):
+                   interaction_p):
     
     nrows = len(D_sites)*len(D_ends)
     repair_data_De_Ds = np.zeros((nrows,6))
-    #print(nrows)
+    print(nrows)
     
     for j,De in enumerate(D_ends):
         
-        #print('----------------')
+        print('----------------')
              
         repair_avgs = np.empty(len(D_sites))
         repair_stds = np.empty(len(D_sites))
     
         for k,Ds in enumerate(D_sites):
 
-            #print(j*len(D_sites)+k)
-            #print(De,Ds)
+            print(j*len(D_sites)+k)
+            print(De,Ds)
 
             repair_rates = np.zeros(repeats)
             misrepair_rates = np.zeros(repeats)
             for i in np.arange(repeats):
                 data = ctrw4_interaction_mc(samples_per_rep, initial_pos, Ds,De, 
                                             diff_time, run_time, min_wait_time, anom_diff_exp,
-                                            int_length, delay_time, interaction_p=interaction_p)
+                                            int_length, delay_time, interaction_p)
                 
                 repair_events = len(data[data['repair']==1.0])
                 misrepair_events = len(data[data['repair']==-1.0])

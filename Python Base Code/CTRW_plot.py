@@ -49,7 +49,7 @@ def plot_3d_ctrw_interaction(interaction_times, interaction_coords, int_count_ar
 #CTRW4 plotting 
 ################################################################################
 #3D CTRW4 plot - with interactions               
-def plot_3d_4ctrw_interaction(int_t,int_arr,df1,df2,df3,df4,repair,sim_clock):
+def plot_3d_4ctrw_interaction(int_t, int_arr, df1, df2, df3, df4, repair, sim_clock, int_count):
 
         fig = plt.figure(figsize=(10,10))
         ax = plt.axes(projection ='3d')
@@ -57,7 +57,7 @@ def plot_3d_4ctrw_interaction(int_t,int_arr,df1,df2,df3,df4,repair,sim_clock):
         ax.plot3D(df2['x'], df2['y'], df2['z'], c='cyan', ls='dotted', label='end 2')
         ax.plot3D(df3['x'], df3['y'], df3['z'], c='g', label='end 3')
         ax.plot3D(df4['x'], df4['y'], df4['z'], c='lime', ls='dotted', label='end 4')
-        ax.set_title('Repair: {} \n Ran for {} s'.format(repair, sim_clock))
+        ax.set_title('Repair: {} \n Ran for {} s \n Interaction count: {}'.format(repair, sim_clock, int_count))
         ax.set_xlabel('x (nm)')
         ax.set_ylabel('y (nm)')
         ax.set_zlabel('z (nm)')

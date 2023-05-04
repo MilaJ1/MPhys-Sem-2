@@ -70,16 +70,25 @@ def gauss_step_3d_pair_bounded(xyz_array1, xyz_array2, diff_coeff, diff_time,r_n
     
     return xyz_array1, xyz_array2
 
-def repair_process(interaction_index):
+def interaction_process(p):
+    #simple call to uniform function if within distance
+    #could be altered to consider probability based on distance
+    repair = 0 
+    q = np.random.uniform(0,1)
+    if q < p:
+        repair = 1
+    return repair
+
+def repair_process(interaction_index, interaction_p):
     """
     Updated Function to also consider misrepairs
     """
-    repair = 1
+    repair = interaction_process(interaction_p)
     
     #index 0 = i12, index 5 = i34, which are ends of same pair
     # if not these indices, misrepair between diff strands
     if interaction_index != 0 and interaction_index != 5:
-        repair = -1
+        repair = repair*(-1)
         
     return repair
 
@@ -183,16 +192,16 @@ def take_step_coupled_ctrw(sim_clock, move_index, coords1, coords2, coords3, coo
     
     return coords1, coords2, coords3, coords4
 
-def check_for_interaction(sim_t, c1, c2, c3, c4, int_range, int_in, delay_time):
+def check_for_interaction(sim_t, c1, c2, c3, c4, int_range, int_in, delay_time, interaction_p, int_count):
     """
     sim_t is current simulation time
-    Assumed all interactions result in repair/misrepair.
     Function to take positions, times and check for repair.
     t1-t4 are current walk times, c1-c4 are their coordinates xyz
     int_range is interaction range, int_in is exisiting interaction array
     int_in has form: [i12,i13,i14,i23,i24,i34,repair]
     where i12 is a tally of interactions between 1 and 2 etc, repair is 1,0,-1
     for repair, no repair, or misrepair
+    interaction_p is repair probability
     """
     #array of combinations of times and coordinates to iterate through later
     coords = np.array([[c1,c2],[c1,c3],[c1,c4],[c2,c3],[c2,c4],[c3,c4]],dtype=object)
@@ -210,21 +219,21 @@ def check_for_interaction(sim_t, c1, c2, c3, c4, int_range, int_in, delay_time):
     int_out = int_in
         
     if min_dist < int_range and sim_t > delay_time:
-        repair = repair_process(interaction_index)
+        int_count += 1
+        repair = repair_process(interaction_index, interaction_p)
         int_t = sim_t  # interaction time is the current simulation time
         int_out[-1] = repair
         int_out[interaction_index] = 1
                  
-    return int_t, int_out, repair
+    return int_t, int_out, repair, int_count
 
 ##########################################################################
 # 4 CTRW 
 #########################################################################
 
 def coupled_ctrw(initial_pos, D_break_sites, D_break_ends, diff_time, run_time, min_wait_time, anom_diff_exp, int_length,
-                 delay_time, plot=False):
+                 delay_time, interaction_p):
     """
-    All interactions result in repair/misrepair.
     Separation of the two break ends of one DSB is assumed to be 0.
     initial_pos: 2d array, e.g. [(x1,y1,z1), (x2,y2,z2)], describes initial positions of the two break sites
     """    
@@ -259,6 +268,8 @@ def coupled_ctrw(initial_pos, D_break_sites, D_break_ends, diff_time, run_time, 
     sim_clock = 0  # current time in the simulation (for all particles)
     sim_times = np.array([0])  # time array to be used for all particles
     
+    int_count = 0
+    
     while sim_clock < run_time and repair == 0:
         
         sim_clock = min(individual_clocks)
@@ -273,7 +284,8 @@ def coupled_ctrw(initial_pos, D_break_sites, D_break_ends, diff_time, run_time, 
         
         c1, c2, c3, c4 = coords1[-1], coords2[-1], coords3[-1], coords4[-1]
         
-        int_t, int_arr, repair = check_for_interaction(sim_clock, c1, c2, c3, c4, int_length, int_arr, delay_time)
+        int_t, int_arr, repair, int_count= check_for_interaction(sim_clock, c1, c2, c3, c4, int_length, int_arr, delay_time,
+                                                                 interaction_p, int_count)
         
         # update relevant individual clock
         waiting_t = CTRW.get_waiting_time(min_wait_time, anom_diff_exp)
@@ -289,12 +301,11 @@ def coupled_ctrw(initial_pos, D_break_sites, D_break_ends, diff_time, run_time, 
     data4 = {'t': sim_times, 'x': coords4[:,0], 'y': coords4[:,1], 'z': coords4[:,2]}
     df4 = pd.DataFrame(data4)
 
-    return int_t, int_arr, df1, df2, df3, df4,repair,sim_clock
+    return int_t, int_arr, df1, df2, df3, df4, repair, sim_clock, int_count
 
 def coupled_ctrw_for_mc(initial_pos, D_break_sites, D_break_ends, diff_time, run_time, min_wait_time, anom_diff_exp, int_length,
-                 delay_time, plot=False):
+                        delay_time, interaction_p):
     """
-    All interactions result in repair/misrepair.
     Separation of the two break ends of one DSB is assumed to be 0.
     initial_pos: 2d array, e.g. [(x1,y1,z1), (x2,y2,z2)], describes initial positions of the two break sites
     Slimmed down to not record pandas and originally didnt have plotting while earlier one did
@@ -312,13 +323,16 @@ def coupled_ctrw_for_mc(initial_pos, D_break_sites, D_break_ends, diff_time, run
     coords3 = np.array([[x3, y3, z3]])
     coords4 = np.array([[x4, y4, z4]])
     
-    #possible correct & misrepair counts
+    #possible correct repair counts
     i12,i34 = 0,0
+    #possible misrepair counts
     i13,i14,i23,i24 = 0,0,0,0
     
     repair = 0 
     int_t = 0
+    #int_arr = np.array([int_t,i12,i13,i14,i23,i24,i34,repair])
     int_arr = np.array([i12,i13,i14,i23,i24,i34,repair])
+    # keep int_t separate from int_arr, otherwise it will get rounded to integer
     
     individual_clocks = np.zeros(6)
     for i in range(6):
@@ -326,6 +340,8 @@ def coupled_ctrw_for_mc(initial_pos, D_break_sites, D_break_ends, diff_time, run
     
     sim_clock = 0  # current time in the simulation (for all particles)
     sim_times = np.array([0])  # time array to be used for all particles
+    
+    int_count = 0
     
     while sim_clock < run_time and repair == 0:
         
@@ -340,10 +356,12 @@ def coupled_ctrw_for_mc(initial_pos, D_break_sites, D_break_ends, diff_time, run
                                                                     min_wait_time, anom_diff_exp)
         
         c1, c2, c3, c4 = coords1[-1], coords2[-1], coords3[-1], coords4[-1]
-        int_t, int_arr, repair = check_for_interaction(sim_clock, c1, c2, c3, c4, int_length, int_arr, delay_time)
+        
+        int_t, int_arr, repair, int_count= check_for_interaction(sim_clock, c1, c2, c3, c4, int_length, int_arr, delay_time,
+                                                                 interaction_p, int_count)
         
         # update relevant individual clock
         waiting_t = CTRW.get_waiting_time(min_wait_time, anom_diff_exp)
         individual_clocks[move_index] += waiting_t
 
-    return int_t, int_arr
+    return int_t, int_arr, int_count
