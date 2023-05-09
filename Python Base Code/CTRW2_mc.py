@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import csv
 import CTRW_base as CTRW
 
 def ctrw_3d_interaction_mc(nsamples, initial_pos, diff_coeff, diff_time, run_time, min_wait_time, anom_diff_exp,
@@ -107,13 +108,16 @@ def ctrw_interaction_mc_D_r(nsamples_per_D, repeats, separations, diff_coeffs, d
     return repair_df_D_r
 
 def ctrw2_mc_D_delay_t(nsamples_per_D, repeats, delay_times, diff_coeffs, diff_time, run_time, min_wait_time, anom_diff_exp,
-                           int_length, separation=0, interaction_p=1, plot=0,print_out=0):
+                           int_length, filename,separation=0, interaction_p=1, plot=0,print_out=0):
     
+    nrows = len(diff_coeffs)*len(delay_times)
+    print(nrows)
+    columns=['Delay Time','D','Repair Rate','Repair Rate Std']
     
-    N_rows = int(len(diff_coeffs)*len(delay_times))    
-    repair_data_D_delay_t = np.empty((N_rows,4)) 
-    print(N_rows)
-
+    with open(filename,'w',newline='') as file:
+        write = csv.writer(file)
+        write.writerow(columns)
+        
     for j,delay_t in enumerate(delay_times):
 
         if print_out ==1:
@@ -144,8 +148,15 @@ def ctrw2_mc_D_delay_t(nsamples_per_D, repeats, delay_times, diff_coeffs, diff_t
             repair_avg = np.nanmean(temp_repair_rates)
             repair_std = np.nanstd(temp_repair_rates)
             repair_data_row = np.array([delay_t,D,repair_avg,repair_std])
-            repair_data_D_delay_t[j*len(diff_coeffs)+k] = repair_data_row
+            
+            with open(filename,'a',newline='') as file:
+                write = csv.writer(file)
+                write.writerow(repair_data_row)
+            
+            #repair_data_D_delay_t[j*len(diff_coeffs)+k] = repair_data_row
+            
+            
 
-    repair_df_D_delay_t = pd.DataFrame(data=repair_data_D_delay_t, columns=['Delay Time','D','Repair Rate','Repair Rate Std'])                 
+    #repair_df_D_delay_t = pd.DataFrame(data=repair_data_D_delay_t, columns=['Delay Time','D','Repair Rate','Repair Rate Std'])                 
         
-    return repair_df_D_delay_t
+    #return repair_df_D_delay_t
