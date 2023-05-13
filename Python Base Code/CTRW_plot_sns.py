@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-def plot_heatmaps(df, ylabel, annotate=False):
+def plot_heatmaps(df, ylabel, yformatter='{:.2f}', xformatter='{:.1e}', annotate=False):
     """
     Function to plot repair and misrepair heatmaps side by side.
     """
@@ -27,8 +27,8 @@ def plot_heatmaps(df, ylabel, annotate=False):
             repair_grid[i,j] = repair_rate
             misrepair_grid[i,j] = misrepair_rate
 
-    col_labels = ['{:.0e}'.format(x) for x in col_labels]
-    row_labels = ['{:.1f}'.format(x) for x in row_labels]
+    col_labels = [xformatter.format(x) for x in col_labels]
+    row_labels = [yformatter.format(y) for y in row_labels]
 
     repair_df = pd.DataFrame(data=repair_grid)
     repair_df.columns = col_labels
