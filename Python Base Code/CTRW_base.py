@@ -36,6 +36,7 @@ def gauss_step_3d_bounded(xyz_array, diff_coeff, diff_time,r_nuc=3000):
     new_coords = np.zeros(3)
     
     xyz_array_row = xyz_array[-1]
+    xyz_array = np.vstack((xyz_array, xyz_array_row))
     
     distance_centre = r_nuc + 1
     
@@ -260,6 +261,11 @@ def ctrw_3d_interaction(initial_pos, diff_coeff, diff_time, run_time, min_wait_t
             coords2 = np.vstack((coords2, coords2[-1]))
     
     data1 = {'t': times1, 'x': coords1[:,0], 'y': coords1[:,1], 'z': coords1[:,2]}
+    #print(len(times1))
+    #print(len(coords1[:,0]))
+    #print(len(coords1[:,1]))
+    #print(len(coords1[:,2]))
+          
     df1 = pd.DataFrame(data1)
     data2 = {'t': times2, 'x': coords2[:,0], 'y': coords2[:,1], 'z': coords2[:,2]}
     df2 = pd.DataFrame(data2)

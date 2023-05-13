@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib.ticker import FormatStrFormatter
 
 ################################################################################
 ################################################################################
@@ -115,11 +116,31 @@ def plot_r_and_D(repair_df_D_r,reps,r_vals):
         ax.set_ylabel('Repair Rate')
         ax.legend()
 
+def plot_delay_t_and_D_subplots(repair_df_D_delay_t,reps,dim_1=2,dim_2=3):
+    
+    delay_ts = np.unique((repair_df_D_delay_t['Delay Time'].to_numpy()))
+
+    fig,axes = plt.subplots(dim_1,dim_2,figsize=(10,10))
+    plt.suptitle('Repair Rate vs Diffusivity Coefficient For Varying Initial Delay Times')
+    for i,delay_t in enumerate(delay_ts):
+
+        data = repair_df_D_delay_t[repair_df_D_delay_t['Delay Time']==delay_t]
+
+        axes.flat[i].errorbar(x=data['D'],y=data['Repair Rate'],yerr=data['Repair Rate Std']/np.sqrt(reps),fmt='.',ls='none')
+        axes.flat[i].set_xscale('log')
+        axes.flat[i].set_xlabel('Diffusivity Coefficient')
+        axes.flat[i].set_ylabel('Repair Rate')
+        
+        axes.flat[i].set_title('Delay Time: {0:.2f} s'.format(delay_t))
+        
+    fig.tight_layout()
+     
+
 ###############################################################################
 #CTRW4 MC data
 ################################################################################
 
-def plot_De_and_Ds(repair_df_D_r,reps=1):
+def plot_De_and_Ds(repair_df_D_r,reps=1,skip=1):
     
     fig,(ax1,ax2) = plt.subplots(1,2,figsize=(10,8))
     plt.suptitle('Repair and Misrepair Rate vs Break Site Diffusivity Coefficient For Varying Break End Diffusivity')
@@ -127,24 +148,26 @@ def plot_De_and_Ds(repair_df_D_r,reps=1):
     De_vals = np.unique((repair_df_D_r['D_ends'].to_numpy()))
     print(De_vals)
     
-    for i,De in enumerate(De_vals):
+    for i,De in enumerate(De_vals[::skip]):
 
         data = repair_df_D_r[repair_df_D_r['D_ends']==De]
 
         #area = scipy.integrate.simpson(data['Repair Rate']/reps, x=data['D'], axis=-1, even='avg')
         #ax.errorbar(x=data['D'],y=data['Repair Rate'],
          #           yerr=data['Repair Rate Std']/reps,label='Initial Separation: {} nm, Area Under Curve: {}'.format(r,'area'))
-        ax1.plot(data['D_sites'],data['Repair Rate']/reps,label='D_end = {}'.format(De))
+        ax1.errorbar(x=data['D_sites'],y=data['Repair Rate'],yerr = data['Repair Rate Std']/np.sqrt(reps), label='D_end = {}'.format(De))
         ax1.set_xscale('log')
         ax1.set_xlabel('Break Site Diffusivity Coefficient')
         ax1.set_ylabel('Repair Rate')
         ax1.set_title('Repair Rate vs Site Diffusion Coefficient')
         
-        ax2.plot(data['D_sites'],data['Misrepair Rate']/reps,label='D_end = {:.2e}'.format(De))
+        ax2.errorbar(x=data['D_sites'],y=data['Misrepair Rate'],yerr=data['Misrepair Rate Std']/np.sqrt(reps),label='D_end = {:.2e}'.format(De))
         ax2.set_xscale('log')
         ax2.set_xlabel('Break Site Diffusivity Coefficient')
         ax2.set_ylabel('Misrepair Rate')
         ax2.set_title('Misrepair Rate vs Site Diffusion Coefficient')
+
+        fig.tight_layout()
         
         plt.legend()
 
@@ -159,8 +182,9 @@ def plot_De_and_Ds_subplots(repair_df_De_Ds,plot_dim_1=2,plot_dim_2=3,reps=1):
 
         data = repair_df_De_Ds[repair_df_De_Ds['D_ends']==De]
 
-        axes.flat[i].plot(data['D_sites'],data['Repair Rate']/reps,color ='k',label='Repair Rate')
-        axes.flat[i].plot(data['D_sites'],data['Misrepair Rate']/reps,
+        axes.flat[i].errorbar(x=data['D_sites'],y=data['Repair Rate'],yerr=data['Repair Rate Std']/np.sqrt(reps),color ='k',
+                              label='Repair Rate')
+        axes.flat[i].errorbar(x=data['D_sites'],y=data['Misrepair Rate'],yerr=data['Misrepair Rate Std']/np.sqrt(reps),
                           color='r',linestyle='dashed',label='Misepair Rate')
         
         axes.flat[i].set_xscale('log')
@@ -185,19 +209,31 @@ def heatmap_repair_misrepair_subplots(repair_misrepair_df,N_de,N_ds,misrep_multi
     arr_misrepair = np.array(repair_misrepair_df['Misrepair Rate'].values)
     arr_misrepair = np.reshape(arr_misrepair,(N_de,N_ds))
 
+    arr_repair = np.flip(arr_repair,axis=0)
+    arr_misrepair = np.flip(arr_misrepair,axis=0)
+
     repair_misrepair_arr = np.array([arr_repair,arr_misrepair*misrep_multiplier])
+
+    De_vals = np.unique((repair_misrepair_df['D_ends'].to_numpy()))
+    Ds_vals = np.unique((repair_misrepair_df['D_sites'].to_numpy()))
 
     titles = np.array(['Repair Rate','Misrepair Rate X 10'])
     fig, axes = plt.subplots(nrows=1, ncols=2,figsize=(10,8))
+    #plt.ticklabel_format(style='plain')
     fig.suptitle('Heatmaps for Repair and Misrepair Rates, Varying Break Site and Break End Diffusivities')
     for i,ax in enumerate(axes.flat):
         im = ax.imshow(repair_misrepair_arr[i], cmap='hot', vmin=0,vmax=1,
                         extent=extent_list)
         ax.set_title('{}'.format(titles[i]))
         ax.set_xlabel('Break Site Diffusion Coefficient')
+        ax.plot()
         
         if i == 0:
             ax.set_ylabel('Break End Diffusion Coefficient')
+
+        ax.set(xticks=np.linspace(extent_list[0], extent_list[1], N_de), xticklabels=Ds_vals,
+                yticks=np.linspace(extent_list[2], extent_list[3], N_ds), yticklabels=De_vals)
+        #ax.ticklabel_format(style='sci',scilimits=(10,17),axis='both')
 
     fig.colorbar(im, ax=axes.ravel().tolist(),orientation='horizontal',label='Rate')
 
