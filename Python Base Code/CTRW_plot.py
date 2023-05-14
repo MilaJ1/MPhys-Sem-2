@@ -134,6 +134,30 @@ def plot_delay_t_and_D_subplots(repair_df_D_delay_t,reps,dim_1=2,dim_2=3):
         axes.flat[i].set_title('Delay Time: {0:.2f} s'.format(delay_t))
         
     fig.tight_layout()
+
+def plot_delay_t_and_D_subplots_v2(repair_df_D_delay_t1, repair_df_D_delay_t2, p1, p2, reps, dim_1=2, dim_2=3):
+    
+    delay_ts = np.unique((repair_df_D_delay_t1['Delay Time'].to_numpy()))
+
+    fig,axes = plt.subplots(dim_1,dim_2,figsize=(10,10))
+    plt.suptitle('Repair Rate vs Diffusivity Coefficient For Varying Initial Delay Times')
+    for i,delay_t in enumerate(delay_ts):
+
+        data1 = repair_df_D_delay_t1[repair_df_D_delay_t1['Delay Time']==delay_t]
+        data2 = repair_df_D_delay_t2[repair_df_D_delay_t2['Delay Time']==delay_t]
+
+        axes.flat[i].errorbar(x=data1['D'],y=data1['Repair Rate'],yerr=data1['Repair Rate Std']/np.sqrt(reps),fmt='.',
+                              ls='none', label='p={}'.format(p1))
+        axes.flat[i].errorbar(x=data2['D'],y=data2['Repair Rate'],yerr=data2['Repair Rate Std']/np.sqrt(reps),fmt='.',
+                              ls='none', label='p={}'.format(p2))
+        axes.flat[i].set_xscale('log')
+        axes.flat[i].set_xlabel('Diffusivity Coefficient')
+        axes.flat[i].set_ylabel('Repair Fraction')
+        axes.flat[i].legend()
+        
+        axes.flat[i].set_title('Delay Time: {0:.2f} s'.format(delay_t))
+        
+    fig.tight_layout()
      
 
 ###############################################################################
